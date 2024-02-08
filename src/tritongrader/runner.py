@@ -1,9 +1,10 @@
 import subprocess
+import time
 
 from tempfile import NamedTemporaryFile
-from typing import TextIO
+from typing import IO, TextIO, Optional, BinaryIO
 
-class Runner:
+class CommandRunner:
     DEFAULT_TIMEOUT_MS = 5000.0
     QEMU_ARM = "qemu-arm -L /usr/arm-linux-gnueabihf/ "
 
@@ -18,7 +19,7 @@ class Runner:
         arm: bool = False,
     ):
         if arm:
-            self.command = Runner.QEMU_ARM + self.command
+            self.command = CommandRunner.QEMU_ARM + self.command
         else:
             self.command = command
         
@@ -28,6 +29,10 @@ class Runner:
         self.timeout_ms = timeout_ms
         self.text = text
         self.arm = arm
+        self.outfp: Optional[IO] = None
+        self.errfp: Optional[IO] = None
+        self.running_time_ms: float = 0
+        self.returncode = None
     
     def print_text_file(self, fp: TextIO, heading=""):
         if heading:
@@ -37,7 +42,34 @@ class Runner:
             if not line:
                 break
             print(line, end="")
+    
+    def compare_text_files(self, fp1: TextIO, fp2: TextIO) -> bool:
+        while True:
+            line1 = fp1.readline()
+            line2 = fp2.readline()
+            if line1 != line2:
+                return False
+            if not line1 or not line2:
+                break
+        return True
 
+    def compare_binary_files(self, fp1: BinaryIO, fp2: BinaryIO) -> bool:
+        # TODO: Handle binary stdout and stderr
+        return True
+    
+    def check_stdout(self, expected_stdout: str) -> bool:
+        with open(expected_stdout, "r" if self.text else "rb") as fp:
+            if self.text:
+                return self.compare_text_files(self.outfp, fp)
+            else:
+                return self.compare_binary_files(self.outfp, fp)
+    
+    def check_stderr(self, expected_stderr: str) -> bool:
+        with open(expected_stderr, "r" if self.text else "rb") as fp:
+            if self.text:
+                return self.compare_text_files(self.errfp, fp)
+            else:
+                return self.compare_binary_files(self.errfp, fp)
     
     def run(self):
         if self.capture_output:
@@ -47,6 +79,7 @@ class Runner:
         if self.print_command:
             print(f"$ self.command")
         
+        start_ts = time.time()
         sp = subprocess.run(
             self.command,
             shell=True,
@@ -56,6 +89,8 @@ class Runner:
             arm=self.arm,
             timeout=self.timeout_ms / 1000,
         )
+        end_ts = time.time()
+        self.running_time_ms = (end_ts - start_ts) * 1000
 
         if self.print_command:
             if not self.text:
