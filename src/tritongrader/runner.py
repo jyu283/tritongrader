@@ -24,11 +24,7 @@ class CommandRunner:
         interpreter: str = "",
     ):
         if arm:
-<<<<<<< HEAD
             self.command = interpreter + ' ' + command
-=======
-            self.command = CommandRunner.QEMU_ARM + command
->>>>>>> master
         else:
             self.command = command
 
