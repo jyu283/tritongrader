@@ -216,8 +216,11 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
             item["max_score"] = test.point_value
         if test.result.passed is not None:
             item["status"] = "passed" if test.result.passed else "failed"
-
-        item.update(super().format_test(test))
+        
+        if not test.result.has_run:
+            item["output"] = "This test was not run."
+        else:
+            item.update(super().format_test(test))
         return item
 
     def get_total_score(self):
