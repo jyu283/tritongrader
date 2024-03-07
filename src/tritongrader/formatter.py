@@ -177,6 +177,9 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         }
 
     def format_basic_test(self, test: BasicTestCase):
+        if not test.result.has_run or not test.runner:
+            return "This test was not run."
+
         summary = []
         summary.extend(
             [
