@@ -51,7 +51,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         hide_points: bool = False,
         max_output_bytes: int = 5000,
         verbose: bool = True,
-        html_diff: bool = True,
+        html_diff: bool = False,
         leaderboard: List[Tuple[str, Optional[Union[int, float, str]], Optional[str]]] = None,
     ):
         super().__init__(src)
